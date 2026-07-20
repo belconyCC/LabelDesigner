@@ -1,76 +1,19 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Build artifacts
+/build/
+/bin/
+/CMakeFiles/
+/CMakeCache.txt
+/*.user
+/*.pro.user
 
-# Precompiled Headers
-*.gch
-*.pch
+# Qt Creator
+*.creator
+*.creator.user
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
+# Windows
 *.exe
-*.out
-*.app
+*.dll
+*.pdb
 
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-*.cmake
-build/
-install/
-
-# Qt
-moc_*.cpp
-ui_*.h
-qrc_*.cpp
-*.pro.user
-.qmake.stash
-
-# Visual Studio
-.vs/
-*.vcxproj
-*.vcxproj.filters
-*.sln
-Debug/
-Release/
-x64/
-x86/
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+# macOS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Project specific
-*.ldf
-*.backup
-.temp/
