@@ -6,13 +6,14 @@
 #include "../../core/label_info/label_manager.h"
 #include "../../models/fixed_info_element.h"
 #include "../../models/image_element.h"
+#include "../../models/binding_info_element.h"
 #include "../../utils/barcode_generator.h"
 #include "../../utils/qrcode_generator.h"
 
 namespace LabelDesigner {
 
-PreviewWidget::PreviewWidget(LabelManager* manager, QWidget* parent)
-    : QWidget(parent), m_labelManager(manager) {
+PreviewWidget::PreviewWidget(LabelManager* manager, JsonParser* parser, QWidget* parent)
+    : QWidget(parent), m_labelManager(manager), m_jsonParser(parser) {
     createUI();
 }
 
@@ -73,8 +74,6 @@ void PreviewWidget::updatePreview() {
             break;
         }
         case LabelElement::ElementType::Barcode: {
-            // Use BarcodeGenerator placeholder
-            // For now render content as text
             QRect r = e->getRect().isNull() ? QRect(10, 100, 200, 50) : e->getRect();
             painter.setPen(Qt::black);
             painter.drawRect(r);
@@ -89,14 +88,17 @@ void PreviewWidget::updatePreview() {
             break;
         }
         case LabelElement::ElementType::BindingInfo: {
-            // Show bound path text for preview
-            QLabel dummy;
-            QRect r = e->getRect().isNull() ? QRect(10, 180, 300, 30) : e->getRect();
-            // We can't evaluate JSON here; just show the path
             BindingInfoElement* b = dynamic_cast<BindingInfoElement*>(e.get());
             if (!b) break;
+            QRect r = e->getRect().isNull() ? QRect(10, 180, 300, 30) : e->getRect();
             painter.setPen(Qt::black);
-            painter.drawText(r, Qt::AlignLeft | Qt::AlignVCenter, QString("Bind: %1").arg(b->getJsonPath()));
+            QString value = b->getJsonPath();
+            // If a shared JsonParser is available, try to resolve the path to a value
+            if (m_jsonParser) {
+                QVariant v = m_jsonParser->getValue(b->getJsonPath());
+                if (!v.isNull()) value = v.toString();
+            }
+            painter.drawText(r, Qt::AlignLeft | Qt::AlignVCenter, QString("%1: %2").arg(b->getName()).arg(value));
             break;
         }
         default:

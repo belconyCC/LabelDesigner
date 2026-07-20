@@ -10,8 +10,8 @@
 
 namespace LabelDesigner {
 
-LabelEditorWidget::LabelEditorWidget(LabelManager* manager, QWidget* parent)
-    : QWidget(parent), m_labelManager(manager) {
+LabelEditorWidget::LabelEditorWidget(LabelManager* manager, JsonParser* parser, QWidget* parent)
+    : QWidget(parent), m_labelManager(manager), m_jsonParser(parser) {
     createUI();
     setupConnections();
     refreshElementList();
@@ -66,7 +66,7 @@ void LabelEditorWidget::refreshElementList() {
 }
 
 void LabelEditorWidget::onAddElement() {
-    AddElementDialog dlg(this);
+    AddElementDialog dlg(m_jsonParser, this);
     if (dlg.exec() != QDialog::Accepted) return;
     QString name = dlg.elementName();
     if (name.isEmpty()) name = "Element";
@@ -130,7 +130,8 @@ void LabelEditorWidget::onEditElement() {
     } else if (e->getType() == LabelElement::ElementType::BindingInfo) {
         BindingInfoElement* b = dynamic_cast<BindingInfoElement*>(e.get());
         if (!b) return;
-        AddElementDialog dlg(this);
+        AddElementDialog dlg(m_jsonParser, this);
+        // Pre-fill name and selection
         dlg.exec();
         QString path = dlg.bindingJsonPath();
         if (!path.isEmpty()) {

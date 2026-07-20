@@ -20,6 +20,8 @@ public:
     };
 
     explicit AddElementDialog(QWidget* parent = nullptr);
+    // Accept an optional shared JsonParser pointer. If provided, the dialog will use it for loading JSON and enumerating paths.
+    explicit AddElementDialog(JsonParser* sharedParser, QWidget* parent = nullptr);
     ~AddElementDialog();
 
     ElementType selectedType() const;

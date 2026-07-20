@@ -6,13 +6,13 @@
 
 namespace LabelDesigner {
 
-class AddElementDialog;
+class JsonParser;
 
 class LabelEditorWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LabelEditorWidget(LabelManager* manager, QWidget* parent = nullptr);
+    explicit LabelEditorWidget(LabelManager* manager, JsonParser* parser, QWidget* parent = nullptr);
     ~LabelEditorWidget();
 
 private slots:
@@ -27,6 +27,7 @@ private:
     void refreshElementList();
 
     LabelManager* m_labelManager;
+    JsonParser* m_jsonParser;
     QListWidget* m_elementList;
     QPushButton* m_addButton;
     QPushButton* m_deleteButton;
