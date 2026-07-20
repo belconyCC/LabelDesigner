@@ -55,7 +55,13 @@ public:
     bool pathExists(const QString& jsonPath) const;
 
     /**
-     * @brief Get all keys at root level
+     * @brief Get all possible JSONPath bindings from the currently loaded document
+     * Returns paths like $.product.name, $.serial[], $.serial[0]
+     */
+    std::vector<QString> getAllPaths(int arrayIndexLimit = 3) const;
+
+    /**
+     * @brief Get all root keys
      */
     std::vector<QString> getRootKeys() const;
 
@@ -77,6 +83,11 @@ private:
      * @brief Split JSONPath into segments
      */
     std::vector<QString> parseJsonPath(const QString& jsonPath) const;
+
+    /**
+     * @brief Recursively traverse JSON and emit JSONPath strings
+     */
+    void traverseJson(const QJsonValue& value, const QString& pathPrefix, std::vector<QString>& out, int arrayIndexLimit) const;
 };
 
 } // namespace LabelDesigner

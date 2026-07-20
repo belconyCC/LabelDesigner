@@ -10,6 +10,7 @@
 #include <QFileDialog>
 #include <QGroupBox>
 #include "src/utils/json_parser.h"
+#include <QMessageBox>
 
 namespace LabelDesigner {
 
@@ -101,8 +102,6 @@ AddElementDialog::~AddElementDialog() {
 
 void AddElementDialog::onTypeChanged(int index) {
     // index 0 = Fixed, 1 = Binding
-    QWidget* parentWidget = this->layout()->itemAt(1)->widget();
-    // The group boxes are at items 1 and 2 in layout
     QGroupBox* fixedGroup = qobject_cast<QGroupBox*>(this->layout()->itemAt(1)->widget());
     QGroupBox* bindGroup = qobject_cast<QGroupBox*>(this->layout()->itemAt(2)->widget());
     if (!fixedGroup || !bindGroup) return;
@@ -126,13 +125,12 @@ void AddElementDialog::onLoadJsonClicked() {
         QMessageBox::critical(this, "Error", QString("Failed to load JSON: %1").arg(m->m_jsonParser.getLastError()));
         return;
     }
-    // Populate binding paths (top-level and nested keys)
+    // Populate binding paths (recursively)
     m->m_bindingPaths->clear();
-    auto keys = m->m_jsonParser.getRootKeys();
-    for (const auto& k : keys) {
-        m->m_bindingPaths->addItem(QString("$.") + k);
+    auto paths = m->m_jsonParser.getAllPaths(3);
+    for (const auto& p : paths) {
+        m->m_bindingPaths->addItem(p);
     }
-    // Optionally we can traverse objects to add nested paths
 }
 
 AddElementDialog::ElementType AddElementDialog::selectedType() const {

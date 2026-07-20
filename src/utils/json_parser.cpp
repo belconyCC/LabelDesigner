@@ -149,4 +149,46 @@ std::vector<QString> JsonParser::getRootKeys() const {
     return keys;
 }
 
+void JsonParser::traverseJson(const QJsonValue& value, const QString& pathPrefix, std::vector<QString>& out, int arrayIndexLimit) const {
+    // pathPrefix expected to start with $ or $.key or $.key.sub
+    out.push_back(pathPrefix);
+
+    if (value.isObject()) {
+        QJsonObject obj = value.toObject();
+        for (const QString& key : obj.keys()) {
+            QString next = pathPrefix + "." + key;
+            traverseJson(obj.value(key), next, out, arrayIndexLimit);
+        }
+    } else if (value.isArray()) {
+        // emit wildcard array path
+        QString wildcard = pathPrefix + "[]";
+        out.push_back(wildcard);
+        QJsonArray arr = value.toArray();
+        int limit = qMin(arrayIndexLimit, arr.size());
+        for (int i = 0; i < limit; ++i) {
+            QString indexed = QString("%1[%2]").arg(pathPrefix).arg(i);
+            traverseJson(arr.at(i), indexed, out, arrayIndexLimit);
+        }
+    } else {
+        // primitive value; already added
+    }
+}
+
+std::vector<QString> JsonParser::getAllPaths(int arrayIndexLimit) const {
+    std::vector<QString> out;
+    // start from root
+    QJsonValue rootValue = m_root;
+    traverseJson(rootValue, "$", out, arrayIndexLimit);
+    // remove duplicates while preserving order
+    std::vector<QString> unique;
+    std::set<QString> seen;
+    for (const auto& p : out) {
+        if (!seen.count(p)) {
+            unique.push_back(p);
+            seen.insert(p);
+        }
+    }
+    return unique;
+}
+
 } // namespace LabelDesigner
