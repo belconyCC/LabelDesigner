@@ -1,122 +1,62 @@
-#include "file_manager.h"
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QDateTime>
-
-namespace LabelDesigner {
-
-FileManager::FileManager() {
-}
-
-FileManager::~FileManager() {
-}
-
-bool FileManager::saveProject(const QString& filePath, const QString& projectName,
-                              const LabelManager& labelManager) {
-    QJsonObject root;
-    root["project_name"] = projectName;
-    root["version"] = "1.0";
-    root["created_at"] = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    
-    // Save elements
-    QJsonDocument elementsDoc = QJsonDocument::fromJson(labelManager.toJson().toUtf8());
-    if (elementsDoc.isObject()) {
-        root["label_data"] = elementsDoc.object();
-    }
-    
-    QJsonDocument doc(root);
-    QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly)) {
-        m_lastError = QString("Cannot open file for writing: %1").arg(filePath);
-        return false;
-    }
-    
-    file.write(doc.toJson());
-    file.close();
-    return true;
-}
-
-bool FileManager::loadProject(const QString& filePath, QString& projectName,
-                              LabelManager& labelManager) {
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        m_lastError = QString("Cannot open file for reading: %1").arg(filePath);
-        return false;
-    }
-    
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-    
-    if (!doc.isObject()) {
-        m_lastError = "Invalid project file format";
-        return false;
-    }
-    
-    QJsonObject root = doc.object();
-    projectName = root["project_name"].toString();
-    
-    // Load elements
-    QJsonObject labelData = root["label_data"].toObject();
-    QString labelDataJson = QString::fromUtf8(QJsonDocument(labelData).toJson());
-    labelManager.fromJson(labelDataJson);
-    
-    return true;
-}
-
-bool FileManager::exportToJson(const QString& filePath,
-                               const QString& projectName,
+*** Begin Patch
+*** Update File: src/core/file_manager/file_manager.cpp
+@@
+ bool FileManager::saveProject(const QString& filePath, const QString& projectName,
                                const LabelManager& labelManager) {
-    QJsonObject root;
-    root["project_name"] = projectName;
-    root["version"] = "1.0";
-    root["exported_at"] = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    
-    // Export elements
-    QJsonDocument elementsDoc = QJsonDocument::fromJson(labelManager.toJson().toUtf8());
-    if (elementsDoc.isObject()) {
-        root["elements"] = elementsDoc.object();
-    }
-    
-    QJsonDocument doc(root);
-    QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly)) {
-        m_lastError = QString("Cannot open file for writing: %1").arg(filePath);
-        return false;
-    }
-    
-    file.write(doc.toJson(QJsonDocument::Indented));
-    file.close();
-    return true;
-}
-
-bool FileManager::importFromJson(const QString& filePath,
-                                 QString& projectName,
-                                 LabelManager& labelManager) {
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        m_lastError = QString("Cannot open file for reading: %1").arg(filePath);
-        return false;
-    }
-    
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-    
-    if (!doc.isObject()) {
-        m_lastError = "Invalid JSON file format";
-        return false;
-    }
-    
-    QJsonObject root = doc.object();
-    projectName = root["project_name"].toString();
-    
-    // Import elements
-    QJsonObject elementsObj = root["elements"].toObject();
-    QString elementsJson = QString::fromUtf8(QJsonDocument(elementsObj).toJson());
-    labelManager.fromJson(elementsJson);
-    
-    return true;
-}
-
-} // namespace LabelDesigner
+-    QJsonObject root;
++bool FileManager::saveProject(const QString& filePath, const QString& projectName,
++                              const LabelManager& labelManager,
++                              const QString& bindingJson) {
++    QJsonObject root;
+     root["project_name"] = projectName;
+@@
+-    QJsonDocument elementsDoc = QJsonDocument::fromJson(labelManager.toJson().toUtf8());
+-    if (elementsDoc.isObject()) {
+-        root["label_data"] = elementsDoc.object();
+-    }
++    QJsonDocument elementsDoc = QJsonDocument::fromJson(labelManager.toJson().toUtf8());
++    if (elementsDoc.isObject()) {
++        root["label_data"] = elementsDoc.object();
++    }
++    // Save binding JSON if provided
++    if (!bindingJson.isEmpty()) {
++        QJsonDocument bindDoc = QJsonDocument::fromJson(bindingJson.toUtf8());
++        if (bindDoc.isObject() || bindDoc.isArray()) {
++            root["binding_data"] = bindDoc.object().isEmpty() ? QJsonValue(bindDoc.array()) : QJsonValue(bindDoc.object());
++        }
++    }
+@@
+ bool FileManager::loadProject(const QString& filePath, QString& projectName,
+-                              LabelManager& labelManager) {
++                              LabelManager& labelManager,
++                              QString* outBindingJson) {
+     QFile file(filePath);
+     if (!file.open(QIODevice::ReadOnly)) {
+         m_lastError = QString("Cannot open file for reading: %1").arg(filePath);
+         return false;
+     }
+@@
+     QJsonObject root = doc.object();
+     projectName = root["project_name"].toString();
+     
+     // Load elements
+     QJsonObject labelData = root["label_data"].toObject();
+     QString labelDataJson = QString::fromUtf8(QJsonDocument(labelData).toJson());
+     labelManager.fromJson(labelDataJson);
++    
++    // Load binding data if exists
++    if (outBindingJson) {
++        if (root.contains("binding_data")) {
++            QJsonValue bd = root["binding_data"];
++            QJsonDocument bdDoc;
++            if (bd.isObject()) bdDoc.setObject(bd.toObject());
++            else if (bd.isArray()) bdDoc.setArray(bd.toArray());
++            *outBindingJson = QString::fromUtf8(bdDoc.toJson(QJsonDocument::Compact));
++        } else {
++            *outBindingJson = QString();
++        }
++    }
+     
+     return true;
+ }
+*** End Patch

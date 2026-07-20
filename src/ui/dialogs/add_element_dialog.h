@@ -20,7 +20,6 @@ public:
     };
 
     explicit AddElementDialog(QWidget* parent = nullptr);
-    // Accept an optional shared JsonParser pointer. If provided, the dialog will use it for loading JSON and enumerating paths.
     explicit AddElementDialog(JsonParser* sharedParser, QWidget* parent = nullptr);
     ~AddElementDialog();
 
@@ -32,6 +31,9 @@ public:
 
     // For BindingInfo
     QString bindingJsonPath() const;
+
+signals:
+    void jsonLoaded();
 
 private slots:
     void onTypeChanged(int index);

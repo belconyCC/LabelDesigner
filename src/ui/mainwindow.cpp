@@ -1,29 +1,31 @@
 *** Begin Patch
 *** Update File: src/ui/mainwindow.cpp
 @@
- #include "widgets/label_editor_widget.h"
- #include "widgets/layout_designer_widget.h"
- #include "widgets/package_code_designer_widget.h"
- #include "widgets/preview_widget.h"
-+#include "src/utils/json_parser.h"
+ void MainWindow::createCentralWidget() {
 @@
- MainWindow::MainWindow(QWidget* parent)
-     : QMainWindow(parent),
-       m_labelManager(std::make_unique<LabelManager>()),
-       m_layoutEngine(std::make_unique<LayoutEngine>()),
-       m_counterManager(std::make_unique<CounterManager>()),
-       m_fileManager(std::make_unique<FileManager>()),
--      m_isModified(false) {
-+      m_isModified(false) {
-+    m_jsonParser = std::make_unique<JsonParser>();
-@@
--    m_labelEditorWidget = new LabelEditorWidget();
--    m_layoutDesignerWidget = new LayoutDesignerWidget();
+-    // Create left panel: Label Editor and Layout Designer
++    // Create left panel: Label Editor and Layout Designer
+     QSplitter* leftSplitter = new QSplitter(Qt::Vertical);
+-    m_labelEditorWidget = new LabelEditorWidget(m_labelManager.get(), m_jsonParser.get());
 +    m_labelEditorWidget = new LabelEditorWidget(m_labelManager.get(), m_jsonParser.get());
-+    m_layoutDesignerWidget = new LayoutDesignerWidget();
+     m_layoutDesignerWidget = new LayoutDesignerWidget();
+     leftSplitter->addWidget(m_labelEditorWidget);
+     leftSplitter->addWidget(m_layoutDesignerWidget);
 @@
--    m_packageCodeDesignerWidget = new PackageCodeDesignerWidget();
--    m_previewWidget = new PreviewWidget();
-+    m_packageCodeDesignerWidget = new PackageCodeDesignerWidget();
+     QSplitter* rightSplitter = new QSplitter(Qt::Vertical);
+     m_packageCodeDesignerWidget = new PackageCodeDesignerWidget();
+-    m_previewWidget = new PreviewWidget(m_labelManager.get(), m_jsonParser.get());
 +    m_previewWidget = new PreviewWidget(m_labelManager.get(), m_jsonParser.get());
+     rightSplitter->addWidget(m_packageCodeDesignerWidget);
+     rightSplitter->addWidget(m_previewWidget);
+@@
+ }
+@@
+ void MainWindow::setupConnections() {
+-    // Connect signals/slots for UI synchronization
++    // Connect signals/slots for UI synchronization
++    if (m_labelEditorWidget && m_previewWidget) {
++        connect(m_labelEditorWidget, &LabelEditorWidget::elementsChanged, m_previewWidget, &PreviewWidget::updatePreview);
++    }
+ }
 *** End Patch
