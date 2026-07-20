@@ -1,21 +1,18 @@
 #pragma once
 
+#include "../../core/label_info/label_manager.h"
 #include <QWidget>
-
-class QListWidget;
-class QPushButton;
+#include <QString>
 
 namespace LabelDesigner {
 
-/**
- * @brief Label editor widget
- * Provides UI for editing label elements
- */
+class AddElementDialog;
+
 class LabelEditorWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LabelEditorWidget(QWidget* parent = nullptr);
+    explicit LabelEditorWidget(LabelManager* manager, QWidget* parent = nullptr);
     ~LabelEditorWidget();
 
 private slots:
@@ -27,7 +24,9 @@ private slots:
 private:
     void createUI();
     void setupConnections();
+    void refreshElementList();
 
+    LabelManager* m_labelManager;
     QListWidget* m_elementList;
     QPushButton* m_addButton;
     QPushButton* m_deleteButton;

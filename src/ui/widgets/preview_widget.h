@@ -2,24 +2,16 @@
 
 #include <QWidget>
 
-class QLabel;
-
 namespace LabelDesigner {
+class LabelManager;
 
-/**
- * @brief Preview widget
- * Displays real-time preview of the label design
- */
 class PreviewWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit PreviewWidget(QWidget* parent = nullptr);
+    explicit PreviewWidget(LabelManager* manager, QWidget* parent = nullptr);
     ~PreviewWidget();
 
-    /**
-     * @brief Update preview with new label data
-     */
     void updatePreview();
 
 protected:
@@ -27,7 +19,7 @@ protected:
 
 private:
     void createUI();
-
+    LabelManager* m_labelManager;
     QLabel* m_previewLabel;
 };
 

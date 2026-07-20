@@ -1,0 +1,12 @@
+{
+  "product": {
+    "name": "Industrial Widget",
+    "model": "IW-1000"
+  },
+  "serial": ["SN001", "SN002"],
+  "manufacturer": "Acme Corp",
+  "meta": {
+    "batch": "BATCH-42",
+    "date": "2026-07-20"
+  }
+}

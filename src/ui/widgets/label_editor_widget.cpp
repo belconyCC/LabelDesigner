@@ -4,13 +4,17 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QMessageBox>
+#include "../dialogs/add_element_dialog.h"
+#include "../../models/fixed_info_element.h"
+#include "../../models/binding_info_element.h"
 
 namespace LabelDesigner {
 
-LabelEditorWidget::LabelEditorWidget(QWidget* parent)
-    : QWidget(parent) {
+LabelEditorWidget::LabelEditorWidget(LabelManager* manager, QWidget* parent)
+    : QWidget(parent), m_labelManager(manager) {
     createUI();
     setupConnections();
+    refreshElementList();
 }
 
 LabelEditorWidget::~LabelEditorWidget() {
@@ -52,13 +56,53 @@ void LabelEditorWidget::setupConnections() {
     connect(m_elementList, &QListWidget::itemSelectionChanged, this, &LabelEditorWidget::onElementSelected);
 }
 
+void LabelEditorWidget::refreshElementList() {
+    m_elementList->clear();
+    if (!m_labelManager) return;
+    const auto& elems = m_labelManager->getElements();
+    for (const auto& e : elems) {
+        m_elementList->addItem(e->getName() + " (" + QString::number(static_cast<int>(e->getType())) + ")");
+    }
+}
+
 void LabelEditorWidget::onAddElement() {
-    // TODO: Show dialog to select element type and add to list
+    AddElementDialog dlg(this);
+    if (dlg.exec() != QDialog::Accepted) return;
+    QString name = dlg.elementName();
+    if (name.isEmpty()) name = "Element";
+    switch (dlg.selectedType()) {
+    case AddElementDialog::ElementType::FixedInfo: {
+        auto elem = std::make_shared<FixedInfoElement>(name);
+        elem->setText(dlg.fixedText());
+        m_labelManager->addElement(elem);
+        break;
+    }
+    case AddElementDialog::ElementType::BindingInfo: {
+        auto elem = std::make_shared<BindingInfoElement>(name);
+        elem->setJsonPath(dlg.bindingJsonPath());
+        m_labelManager->addElement(elem);
+        break;
+    }
+    default: {
+        // For now, create generic fixed info for other types as placeholder
+        auto elem = std::make_shared<FixedInfoElement>(name);
+        elem->setText("(placeholder)");
+        m_labelManager->addElement(elem);
+        break;
+    }
+    }
+    refreshElementList();
 }
 
 void LabelEditorWidget::onDeleteElement() {
-    if (m_elementList->currentRow() >= 0) {
-        delete m_elementList->takeItem(m_elementList->currentRow());
+    int row = m_elementList->currentRow();
+    if (row >= 0) {
+        const auto& elems = m_labelManager->getElements();
+        if (row < static_cast<int>(elems.size())) {
+            QString id = elems[row]->getId();
+            m_labelManager->removeElement(id);
+            refreshElementList();
+        }
     }
 }
 
@@ -68,8 +112,33 @@ void LabelEditorWidget::onElementSelected() {
 }
 
 void LabelEditorWidget::onEditElement() {
-    if (m_elementList->currentRow() >= 0) {
-        // TODO: Show dialog to edit selected element
+    int row = m_elementList->currentRow();
+    if (row < 0) return;
+    const auto& elems = m_labelManager->getElements();
+    if (row >= static_cast<int>(elems.size())) return;
+    auto e = elems[row];
+    // For demo, only allow editing FixedInfo text and BindingInfo path
+    if (e->getType() == LabelElement::ElementType::FixedInfo) {
+        FixedInfoElement* f = dynamic_cast<FixedInfoElement*>(e.get());
+        if (!f) return;
+        bool ok;
+        QString text = QInputDialog::getText(this, "Edit Fixed Text", "Text:", QLineEdit::Normal, f->getText(), &ok);
+        if (ok) {
+            f->setText(text);
+            refreshElementList();
+        }
+    } else if (e->getType() == LabelElement::ElementType::BindingInfo) {
+        BindingInfoElement* b = dynamic_cast<BindingInfoElement*>(e.get());
+        if (!b) return;
+        AddElementDialog dlg(this);
+        dlg.exec();
+        QString path = dlg.bindingJsonPath();
+        if (!path.isEmpty()) {
+            b->setJsonPath(path);
+            refreshElementList();
+        }
+    } else {
+        QMessageBox::information(this, "Edit", "Edit not implemented for this element type yet.");
     }
 }
 
